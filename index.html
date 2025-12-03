@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SOWAL Renovations</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8fafb;
+            --card: #ffffff;
+            --primary: #0891b2;
+            --primary-dark: #0e7490;
+            --primary-light: #e0f7fa;
+            --secondary: #f59e0b;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --text-light: #94a3b8;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --error: #ef4444;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 12px 40px rgba(0,0,0,0.12);
+            --radius: 16px;
+            --radius-sm: 12px;
+            --radius-full: 9999px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body, #root {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        input, textarea, select, button {
+            font-family: inherit;
+            font-size: 16px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(100%); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        .slide-up { animation: slideUp 0.4s ease-out; }
+        .slide-in { animation: slideIn 0.3s ease-out; }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // API Configuration - Update this to your Vercel URL after deploy
+        const API_URL = 'https://your-app.vercel.app/api';
+
+        // Icons
+        const Icons = {
+            Home: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+            Calendar: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+            MessageCircle: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>,
+            User: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+            ChevronRight: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>,
+            ChevronLeft: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>,
+            Phone: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>,
+            Mail: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
+            MapPin: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+            Clock: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+            Send: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
+            Check: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+            Hammer: () => <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 12l-8.5 8.5c-.83.83-2.17.83-3 0 0 0 0 0 0 0a2.12 2.12 0 0 1 0-3L12 9"/><path d="M17.64 15L22 10.64"/><path d="M20.91 11.7l-1.25-1.25c-.6-.6-.93-1.4-.93-2.25v-.86L16.01 4.6a5.56 5.56 0 0 0-3.94-1.64H9l.92.82A6.18 6.18 0 0 1 12 8.4v1.56l2 2h2.47l2.26 1.91"/></svg>,
+            Wrench: () => <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>,
+            Paintbrush: () => <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18.37 2.63L14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3z"/><path d="M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7"/><path d="M14.5 17.5L4.5 15"/></svg>,
+            Droplet: () => <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>,
+            Zap: () => <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+            Shield: () => <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+            Star: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+            X: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+            ArrowLeft: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
+        };
+
+        // Services data with portfolio
+        const services = [
+            { 
+                id: 'repairs', 
+                icon: <Icons.Hammer />, 
+                name: 'General Repairs', 
+                desc: 'Doors, drywall, fixtures & more', 
+                color: '#0891b2',
+                fullDesc: 'From squeaky doors to broken fixtures, our skilled technicians handle all those nagging repairs that keep your coastal home running smoothly. We understand the unique challenges of maintaining properties in the salt air environment.',
+                features: ['Door & Window Repairs', 'Drywall Patching', 'Fixture Installation', 'Deck Repairs', 'Cabinet Repairs', 'Hardware Replacement'],
+                portfolio: [
+                    { id: 1, title: 'Deck Restoration', location: 'Rosemary Beach', gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+                    { id: 2, title: 'Door Replacement', location: 'Seaside', gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
+                    { id: 3, title: 'Drywall Repair', location: 'Alys Beach', gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' },
+                    { id: 4, title: 'Window Fix', location: 'WaterColor', gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' },
+                ]
+            },
+            { 
+                id: 'painting', 
+                icon: <Icons.Paintbrush />, 
+                name: 'Painting', 
+                desc: 'Interior & exterior painting', 
+                color: '#8b5cf6',
+                fullDesc: 'Transform your space with our premium painting services. We use coastal-grade paints specifically designed to withstand Florida\'s harsh sun, humidity, and salt air for long-lasting beautiful results.',
+                features: ['Interior Painting', 'Exterior Painting', 'Cabinet Refinishing', 'Deck Staining', 'Pressure Washing', 'Color Consultation'],
+                portfolio: [
+                    { id: 1, title: 'Beach House Exterior', location: 'Grayton Beach', gradient: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)' },
+                    { id: 2, title: 'Living Room Refresh', location: 'Santa Rosa', gradient: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)' },
+                    { id: 3, title: 'Kitchen Cabinets', location: 'Inlet Beach', gradient: 'linear-gradient(135deg, #d299c2 0%, #fef9d7 100%)' },
+                    { id: 4, title: 'Deck Staining', location: 'Seacrest', gradient: 'linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)' },
+                ]
+            },
+            { 
+                id: 'plumbing', 
+                icon: <Icons.Droplet />, 
+                name: 'Plumbing', 
+                desc: 'Leaks, faucets, drains', 
+                color: '#3b82f6',
+                fullDesc: 'Keep your water flowing and your drains clear with our reliable plumbing services. From minor leaks to fixture replacements, we provide fast, professional solutions for all your plumbing needs.',
+                features: ['Leak Detection', 'Faucet Installation', 'Toilet Repairs', 'Drain Cleaning', 'Water Heater Service', 'Pipe Repairs'],
+                portfolio: [
+                    { id: 1, title: 'Bathroom Remodel', location: 'Rosemary Beach', gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+                    { id: 2, title: 'Kitchen Faucet Install', location: 'Seaside', gradient: 'linear-gradient(135deg, #48c6ef 0%, #6f86d6 100%)' },
+                    { id: 3, title: 'Water Heater Replace', location: 'Alys Beach', gradient: 'linear-gradient(135deg, #0ba360 0%, #3cba92 100%)' },
+                    { id: 4, title: 'Shower Repair', location: 'WaterColor', gradient: 'linear-gradient(135deg, #00c6fb 0%, #005bea 100%)' },
+                ]
+            },
+            { 
+                id: 'electrical', 
+                icon: <Icons.Zap />, 
+                name: 'Electrical', 
+                desc: 'Outlets, lights, fans', 
+                color: '#f59e0b',
+                fullDesc: 'Safe, code-compliant electrical services for your home. Our licensed electricians handle everything from simple outlet installations to ceiling fan setups and lighting upgrades.',
+                features: ['Outlet Installation', 'Light Fixtures', 'Ceiling Fans', 'Switch Replacements', 'GFCI Outlets', 'Dimmer Switches'],
+                portfolio: [
+                    { id: 1, title: 'Outdoor Lighting', location: 'Grayton Beach', gradient: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)' },
+                    { id: 2, title: 'Ceiling Fan Install', location: 'Blue Mountain', gradient: 'linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)' },
+                    { id: 3, title: 'Kitchen Lighting', location: 'Inlet Beach', gradient: 'linear-gradient(135deg, #fddb92 0%, #d1fdff 100%)' },
+                    { id: 4, title: 'Outlet Upgrade', location: 'Seagrove', gradient: 'linear-gradient(135deg, #fff1eb 0%, #ace0f9 100%)' },
+                ]
+            },
+            { 
+                id: 'renovation', 
+                icon: <Icons.Wrench />, 
+                name: 'Renovations', 
+                desc: 'Kitchen & bath updates', 
+                color: '#10b981',
+                fullDesc: 'Transform your space with our comprehensive renovation services. Whether you\'re updating a bathroom, refreshing your kitchen, or tackling a complete room makeover, we bring your vision to life.',
+                features: ['Bathroom Updates', 'Kitchen Refreshes', 'Flooring Installation', 'Tile Work', 'Backsplash Install', 'Countertop Updates'],
+                portfolio: [
+                    { id: 1, title: 'Master Bath Reno', location: 'Rosemary Beach', gradient: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)' },
+                    { id: 2, title: 'Kitchen Backsplash', location: 'Seaside', gradient: 'linear-gradient(135deg, #67b26f 0%, #4ca2cd 100%)' },
+                    { id: 3, title: 'Floor Replacement', location: 'Alys Beach', gradient: 'linear-gradient(135deg, #56ab2f 0%, #a8e063 100%)' },
+                    { id: 4, title: 'Guest Bath Update', location: 'WaterColor', gradient: 'linear-gradient(135deg, #00b09b 0%, #96c93d 100%)' },
+                ]
+            },
+            { 
+                id: 'hurricane', 
+                icon: <Icons.Shield />, 
+                name: 'Hurricane Prep', 
+                desc: 'Storm protection services', 
+                color: '#ef4444',
+                fullDesc: 'Protect your coastal investment with our comprehensive hurricane preparation services. We help you get storm-ready with shutters, impact windows, and emergency repairs when you need them most.',
+                features: ['Storm Shutters', 'Impact Windows', 'Roof Inspection', 'Emergency Repairs', 'Debris Cleanup', 'Board-Up Service'],
+                portfolio: [
+                    { id: 1, title: 'Impact Windows', location: 'Panama City Beach', gradient: 'linear-gradient(135deg, #eb3349 0%, #f45c43 100%)' },
+                    { id: 2, title: 'Storm Shutters', location: 'Destin', gradient: 'linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%)' },
+                    { id: 3, title: 'Roof Reinforcement', location: 'Santa Rosa', gradient: 'linear-gradient(135deg, #f85032 0%, #e73827 100%)' },
+                    { id: 4, title: 'Post-Storm Repair', location: 'Fort Walton', gradient: 'linear-gradient(135deg, #cb356b 0%, #bd3f32 100%)' },
+                ]
+            },
+        ];
+
+        const timeSlots = ['8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
+
+        // Main App
+        function App() {
+            const [activeTab, setActiveTab] = useState('home');
+            const [selectedService, setSelectedService] = useState(null);
+            const [bookingData, setBookingData] = useState({
+                service: null, serviceDescription: '', date: null, time: null, name: '', phone: '', email: '', address: '', notes: '', photos: []
+            });
+
+            const styles = {
+                container: {
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    maxWidth: '480px',
+                    margin: '0 auto',
+                    background: 'var(--bg)',
+                    position: 'relative'
+                },
+                content: {
+                    flex: 1,
+                    overflow: 'auto',
+                    paddingBottom: '80px'
+                },
+                nav: {
+                    position: 'fixed',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    background: 'var(--card)',
+                    borderTop: '1px solid var(--border)',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    padding: '0.5rem 0',
+                    paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))',
+                    zIndex: 100
+                },
+                navInner: {
+                    display: 'flex',
+                    gap: '0.5rem',
+                    maxWidth: '480px',
+                    width: '100%',
+                    justifyContent: 'space-around'
+                },
+                navItem: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    padding: '0.5rem 1rem',
+                    border: 'none',
+                    background: 'none',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    borderRadius: 'var(--radius-sm)',
+                    transition: 'all 0.2s ease'
+                },
+                navItemActive: {
+                    color: 'var(--primary)',
+                    background: 'var(--primary-light)'
+                },
+                navLabel: {
+                    fontSize: '0.7rem',
+                    fontWeight: 600
+                }
+            };
+
+            const renderContent = () => {
+                if (selectedService) {
+                    return <ServiceDetailScreen 
+                        service={selectedService} 
+                        onBack={() => setSelectedService(null)}
+                        setActiveTab={setActiveTab}
+                        setBookingData={setBookingData}
+                    />;
+                }
+                switch(activeTab) {
+                    case 'home': return <HomeScreen setActiveTab={setActiveTab} setBookingData={setBookingData} setSelectedService={setSelectedService} />;
+                    case 'schedule': return <ScheduleScreen bookingData={bookingData} setBookingData={setBookingData} setActiveTab={setActiveTab} />;
+                    case 'contact': return <ContactScreen />;
+                    case 'account': return <AccountScreen />;
+                    default: return <HomeScreen />;
+                }
+            };
+
+            return (
+                <div style={styles.container}>
+                    <div style={styles.content} className="hide-scrollbar">{renderContent()}</div>
+                    {!selectedService && (
+                        <nav style={styles.nav}>
+                            <div style={styles.navInner}>
+                                {[
+                                    { id: 'home', icon: <Icons.Home />, label: 'Home' },
+                                    { id: 'schedule', icon: <Icons.Calendar />, label: 'Schedule' },
+                                    { id: 'contact', icon: <Icons.MessageCircle />, label: 'Contact' },
+                                    { id: 'account', icon: <Icons.User />, label: 'Account' }
+                                ].map(item => (
+                                    <button key={item.id} style={{...styles.navItem, ...(activeTab === item.id ? styles.navItemActive : {})}} onClick={() => setActiveTab(item.id)}>
+                                        {item.icon}
+                                        <span style={styles.navLabel}>{item.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </nav>
+                    )}
+                </div>
+            );
+        }
+
+        // Home Screen
+        function HomeScreen({ setActiveTab, setBookingData, setSelectedService }) {
+            const [formData, setFormData] = useState({ name: '', phone: '', message: '' });
+            const [formSubmitted, setFormSubmitted] = useState(false);
+            const [formLoading, setFormLoading] = useState(false);
+
+            const handleInquirySubmit = async () => {
+                if (!formData.name || !formData.phone) return;
+                setFormLoading(true);
+                try {
+                    await fetch(`${API_URL}/contact`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+                    setFormSubmitted(true);
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Failed to send. Please call us directly.');
+                }
+                setFormLoading(false);
+            };
+
+            const styles = {
+                screen: { padding: '1.5rem', animation: 'fadeIn 0.3s ease-out' },
+                header: { marginBottom: '1.5rem' },
+                greeting: { fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '0.25rem' },
+                title: { fontSize: '1.75rem', fontWeight: 800, color: 'var(--text)', lineHeight: 1.2 },
+                titleAccent: { color: 'var(--primary)' },
+                hero: { background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)', borderRadius: 'var(--radius)', padding: '1.5rem', marginBottom: '1.5rem', color: 'white', position: 'relative', overflow: 'hidden' },
+                heroPattern: { position: 'absolute', top: 0, right: 0, width: '150px', height: '150px', background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)', transform: 'translate(30%, -30%)' },
+                heroTitle: { fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem' },
+                heroText: { fontSize: '0.9rem', opacity: 0.9, marginBottom: '1rem' },
+                heroBtn: { background: 'white', color: 'var(--primary)', border: 'none', padding: '0.75rem 1.25rem', borderRadius: 'var(--radius-full)', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' },
+                section: { marginBottom: '2rem' },
+                sectionHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' },
+                sectionTitle: { fontSize: '1.1rem', fontWeight: 700 },
+                contactCard: { background: 'var(--card)', borderRadius: 'var(--radius)', padding: '1.25rem', border: '1px solid var(--border)', marginBottom: '2rem' },
+                contactTitle: { fontSize: '1rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' },
+                formRow: { display: 'flex', gap: '0.75rem', marginBottom: '0.75rem' },
+                formGroup: { flex: 1 },
+                input: { width: '100%', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)', border: '2px solid var(--border)', fontSize: '0.95rem', outline: 'none' },
+                textarea: { width: '100%', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)', border: '2px solid var(--border)', fontSize: '0.95rem', minHeight: '80px', resize: 'none', outline: 'none', fontFamily: 'inherit', marginBottom: '0.75rem' },
+                submitBtn: { width: '100%', padding: '0.875rem', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: 'var(--radius-sm)', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' },
+                successMsg: { textAlign: 'center', padding: '1rem' },
+                successIcon: { width: '48px', height: '48px', borderRadius: '50%', background: 'var(--success)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.75rem' },
+                servicesGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' },
+                serviceCard: { background: 'var(--card)', borderRadius: 'var(--radius)', padding: '1.25rem', cursor: 'pointer', border: '1px solid var(--border)', transition: 'all 0.2s ease' },
+                serviceIcon: { width: '48px', height: '48px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.75rem' },
+                serviceName: { fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.25rem' },
+                serviceDesc: { fontSize: '0.8rem', color: 'var(--text-muted)' },
+                serviceArrow: { display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: '0.5rem', color: 'var(--text-light)' },
+                reviews: { background: 'var(--card)', borderRadius: 'var(--radius)', padding: '1.25rem', border: '1px solid var(--border)' },
+                reviewStars: { display: 'flex', gap: '0.25rem', color: 'var(--secondary)', marginBottom: '0.75rem' },
+                reviewText: { fontSize: '0.9rem', color: 'var(--text)', fontStyle: 'italic', marginBottom: '0.75rem', lineHeight: 1.6 },
+                reviewAuthor: { fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }
+            };
+
+            return (
+                <div style={styles.screen}>
+                    <div style={styles.header}>
+                        <p style={styles.greeting}>Welcome to</p>
+                        <h1 style={styles.title}>SOWAL <span style={styles.titleAccent}>Renovations</span></h1>
+                    </div>
+
+                    <div style={styles.hero}>
+                        <div style={styles.heroPattern}></div>
+                        <h2 style={styles.heroTitle}>Your 30A Handyman Experts</h2>
+                        <p style={styles.heroText}>Trusted home repairs & renovations for coastal living</p>
+                        <button style={styles.heroBtn} onClick={() => setActiveTab('schedule')}>Book a Service <Icons.ChevronRight /></button>
+                    </div>
+
+                    {/* Contact Form - Above Services */}
+                    <div style={styles.contactCard}>
+                        {formSubmitted ? (
+                            <div style={styles.successMsg}>
+                                <div style={styles.successIcon}><Icons.Check /></div>
+                                <h3 style={{fontWeight: 700, marginBottom: '0.25rem'}}>Message Sent!</h3>
+                                <p style={{fontSize: '0.85rem', color: 'var(--text-muted)'}}>We'll get back to you soon</p>
+                            </div>
+                        ) : (
+                            <>
+                                <h3 style={styles.contactTitle}><Icons.MessageCircle /> Quick Inquiry</h3>
+                                <div style={styles.formRow}>
+                                    <div style={styles.formGroup}>
+                                        <input type="text" style={styles.input} placeholder="Your Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                                    </div>
+                                    <div style={styles.formGroup}>
+                                        <input type="tel" style={styles.input} placeholder="Phone" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                                    </div>
+                                </div>
+                                <textarea style={styles.textarea} placeholder="How can we help you?" value={formData.message} onChange={e => setFormData({...formData, message: e.target.value})} />
+                                <button style={{...styles.submitBtn, opacity: formLoading ? 0.7 : 1}} onClick={handleInquirySubmit} disabled={formLoading}>
+                                    {formLoading ? 'Sending...' : <>Send Message <Icons.Send /></>}
+                                </button>
+                            </>
+                        )}
+                    </div>
+
+                    {/* Services Grid */}
+                    <div style={styles.section}>
+                        <div style={styles.sectionHeader}><h3 style={styles.sectionTitle}>Our Services</h3></div>
+                        <div style={styles.servicesGrid}>
+                            {services.map((service, i) => (
+                                <div key={service.id} style={{...styles.serviceCard, animation: `slideUp 0.4s ease-out ${i * 0.05}s both`}} onClick={() => setSelectedService(service)}>
+                                    <div style={{...styles.serviceIcon, background: `${service.color}15`, color: service.color}}>{service.icon}</div>
+                                    <div style={styles.serviceName}>{service.name}</div>
+                                    <div style={styles.serviceDesc}>{service.desc}</div>
+                                    <div style={styles.serviceArrow}><Icons.ChevronRight /></div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Reviews */}
+                    <div style={styles.section}>
+                        <div style={styles.sectionHeader}><h3 style={styles.sectionTitle}>What Customers Say</h3></div>
+                        <div style={styles.reviews}>
+                            <div style={styles.reviewStars}>{[1,2,3,4,5].map(i => <Icons.Star key={i} />)}</div>
+                            <p style={styles.reviewText}>"Amazing work on our beach house! The team was professional, on time, and did excellent work. Highly recommend for any 30A homeowner."</p>
+                            <p style={styles.reviewAuthor}>— Sarah M., Rosemary Beach</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Service Detail Screen with Carousel
+        function ServiceDetailScreen({ service, onBack, setActiveTab, setBookingData }) {
+            const carouselRef = useRef(null);
+            const [activeSlide, setActiveSlide] = useState(0);
+
+            const handleScroll = () => {
+                if (carouselRef.current) {
+                    const scrollLeft = carouselRef.current.scrollLeft;
+                    const cardWidth = carouselRef.current.offsetWidth * 0.75;
+                    setActiveSlide(Math.round(scrollLeft / cardWidth));
+                }
+            };
+
+            const styles = {
+                screen: { animation: 'slideIn 0.3s ease-out', minHeight: '100%', background: 'var(--bg)', paddingBottom: '2rem' },
+                header: { position: 'sticky', top: 0, background: 'var(--bg)', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', zIndex: 50, borderBottom: '1px solid var(--border)' },
+                backBtn: { width: '40px', height: '40px', borderRadius: '50%', background: 'var(--card)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text)' },
+                headerTitle: { fontSize: '1.1rem', fontWeight: 700 },
+                content: { padding: '1.5rem' },
+                heroSection: { display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' },
+                iconLarge: { width: '64px', height: '64px', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+                heroText: { flex: 1 },
+                heroTitle: { fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.25rem' },
+                heroSubtitle: { color: 'var(--text-muted)', fontSize: '0.9rem' },
+                description: { fontSize: '0.95rem', lineHeight: 1.7, color: 'var(--text)', marginBottom: '2rem' },
+                section: { marginBottom: '2rem' },
+                sectionTitle: { fontSize: '1rem', fontWeight: 700, marginBottom: '1rem' },
+                featuresList: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' },
+                featureItem: { display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem', background: 'var(--card)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', fontSize: '0.85rem', fontWeight: 500 },
+                featureCheck: { width: '20px', height: '20px', borderRadius: '50%', background: `${service.color}20`, color: service.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+                carouselContainer: { marginLeft: '-1.5rem', marginRight: '-1.5rem' },
+                carousel: { display: 'flex', gap: '1rem', overflowX: 'auto', scrollSnapType: 'x mandatory', paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingBottom: '1rem' },
+                portfolioCard: { minWidth: '75%', scrollSnapAlign: 'start', borderRadius: 'var(--radius)', overflow: 'hidden' },
+                portfolioImage: { width: '100%', height: '200px', display: 'flex', alignItems: 'flex-end', padding: '1.25rem' },
+                portfolioInfo: { color: 'white' },
+                portfolioTitle: { fontWeight: 700, fontSize: '1.1rem', marginBottom: '0.25rem', textShadow: '0 2px 8px rgba(0,0,0,0.3)' },
+                portfolioLocation: { fontSize: '0.85rem', opacity: 0.9, display: 'flex', alignItems: 'center', gap: '0.25rem', textShadow: '0 2px 8px rgba(0,0,0,0.3)' },
+                dots: { display: 'flex', justifyContent: 'center', gap: '0.5rem', marginTop: '0.5rem' },
+                dot: { width: '8px', height: '8px', borderRadius: '50%', background: 'var(--border)', transition: 'all 0.2s ease' },
+                dotActive: { background: service.color, width: '24px', borderRadius: '4px' },
+                ctaSection: { background: 'var(--card)', borderRadius: 'var(--radius)', padding: '1.5rem', border: '1px solid var(--border)', textAlign: 'center' },
+                ctaTitle: { fontWeight: 700, marginBottom: '0.5rem' },
+                ctaText: { fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1rem' },
+                ctaBtn: { width: '100%', padding: '1rem', background: service.color, color: 'white', border: 'none', borderRadius: 'var(--radius)', fontSize: '1rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }
+            };
+
+            return (
+                <div style={styles.screen}>
+                    <div style={styles.header}>
+                        <button style={styles.backBtn} onClick={onBack}><Icons.ArrowLeft /></button>
+                        <span style={styles.headerTitle}>{service.name}</span>
+                    </div>
+                    <div style={styles.content}>
+                        <div style={styles.heroSection}>
+                            <div style={{...styles.iconLarge, background: `${service.color}15`, color: service.color}}>{service.icon}</div>
+                            <div style={styles.heroText}>
+                                <h1 style={styles.heroTitle}>{service.name}</h1>
+                                <p style={styles.heroSubtitle}>{service.desc}</p>
+                            </div>
+                        </div>
+                        <p style={styles.description}>{service.fullDesc}</p>
+                        <div style={styles.section}>
+                            <h3 style={styles.sectionTitle}>What We Offer</h3>
+                            <div style={styles.featuresList}>
+                                {service.features.map((f, i) => (
+                                    <div key={i} style={styles.featureItem}>
+                                        <div style={styles.featureCheck}><Icons.Check /></div>{f}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div style={styles.section}>
+                            <h3 style={styles.sectionTitle}>Our Previous Work</h3>
+                            <div style={styles.carouselContainer}>
+                                <div ref={carouselRef} style={styles.carousel} className="hide-scrollbar" onScroll={handleScroll}>
+                                    {service.portfolio.map(item => (
+                                        <div key={item.id} style={styles.portfolioCard}>
+                                            <div style={{...styles.portfolioImage, background: item.gradient}}>
+                                                <div style={styles.portfolioInfo}>
+                                                    <div style={styles.portfolioTitle}>{item.title}</div>
+                                                    <div style={styles.portfolioLocation}><Icons.MapPin /> {item.location}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div style={styles.dots}>
+                                    {service.portfolio.map((_, i) => (
+                                        <div key={i} style={{...styles.dot, ...(activeSlide === i ? styles.dotActive : {})}} />
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        <div style={styles.ctaSection}>
+                            <h3 style={styles.ctaTitle}>Ready to Get Started?</h3>
+                            <p style={styles.ctaText}>Book your free estimate today</p>
+                            <button style={styles.ctaBtn} onClick={() => { setBookingData(prev => ({ ...prev, serviceDescription: `I need help with ${service.name.toLowerCase()}: ${service.desc}` })); onBack(); setActiveTab('schedule'); }}>
+                                Schedule This Service <Icons.Calendar />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Schedule Screen
+        function ScheduleScreen({ bookingData, setBookingData, setActiveTab }) {
+            const [step, setStep] = useState(bookingData.serviceDescription ? 3 : 2);
+            const [contactNowSelected, setContactNowSelected] = useState(false);
+            const [contactNowSent, setContactNowSent] = useState(false);
+            const [contactNowLoading, setContactNowLoading] = useState(false);
+            const [bookingLoading, setBookingLoading] = useState(false);
+            const [serviceDescription, setServiceDescription] = useState(bookingData.serviceDescription || '');
+            const [customerPhone, setCustomerPhone] = useState('');
+            const [selectedDate, setSelectedDate] = useState(null);
+            const [selectedTime, setSelectedTime] = useState(null);
+            const [showConfirmation, setShowConfirmation] = useState(false);
+
+            const handleContactNow = async () => {
+                setContactNowLoading(true);
+                try {
+                    await fetch(`${API_URL}/request-now`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            serviceDescription: serviceDescription || 'Urgent request', 
+                            phone: customerPhone 
+                        })
+                    });
+                    setContactNowSent(true);
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Failed to send. Please call us directly at (850) 555-SOWAL');
+                }
+                setContactNowLoading(false);
+            };
+            const [selectedDate, setSelectedDate] = useState(null);
+            const [selectedTime, setSelectedTime] = useState(null);
+            const [showConfirmation, setShowConfirmation] = useState(false);
+
+            const getDates = () => {
+                const dates = [];
+                const today = new Date();
+                for (let i = 1; i <= 14; i++) {
+                    const date = new Date(today);
+                    date.setDate(today.getDate() + i);
+                    dates.push(date);
+                }
+                return dates;
+            };
+
+            const formatDate = (date) => {
+                const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                return { day: days[date.getDay()], date: date.getDate(), month: months[date.getMonth()], full: date.toLocaleDateString() };
+            };
+
+            const handleConfirm = async () => {
+                setBookingLoading(true);
+                try {
+                    await fetch(`${API_URL}/bookings`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            serviceDescription,
+                            date: selectedDate.toISOString().split('T')[0],
+                            time: selectedTime,
+                            phone: customerPhone
+                        })
+                    });
+                    setBookingData(prev => ({ ...prev, serviceDescription, date: selectedDate, time: selectedTime }));
+                    setShowConfirmation(true);
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Failed to book. Please call us directly at (850) 555-SOWAL');
+                }
+                setBookingLoading(false);
+            };
+
+            const styles = {
+                screen: { padding: '1.5rem', animation: 'fadeIn 0.3s ease-out' },
+                header: { marginBottom: '1.5rem' },
+                title: { fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.25rem' },
+                subtitle: { color: 'var(--text-muted)', fontSize: '0.9rem' },
+                steps: { display: 'flex', gap: '0.5rem', marginBottom: '2rem' },
+                stepDot: { flex: 1, height: '4px', borderRadius: '2px', background: 'var(--border)', transition: 'all 0.3s ease' },
+                stepDotActive: { background: 'var(--primary)' },
+                section: { marginBottom: '2rem' },
+                sectionTitle: { fontSize: '1.15rem', fontWeight: 800, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' },
+                stepNum: { width: '24px', height: '24px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 700 },
+                serviceInput: { width: '100%', padding: '1rem', borderRadius: 'var(--radius)', border: '2px solid var(--border)', fontSize: '1rem', minHeight: '160px', resize: 'none', outline: 'none', fontFamily: 'inherit', lineHeight: 1.6 },
+                serviceInputFocused: { borderColor: 'var(--primary)' },
+                optionsGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' },
+                optionCard: { background: 'var(--card)', borderRadius: 'var(--radius-sm)', padding: '1rem', border: '2px solid var(--border)', textAlign: 'center', cursor: 'pointer', textDecoration: 'none', color: 'inherit', transition: 'all 0.2s ease' },
+                optionCardSelected: { borderColor: 'var(--primary)', background: 'var(--primary-light)' },
+                optionIcon: { width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.5rem' },
+                optionTitle: { fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.25rem' },
+                optionDesc: { fontSize: '0.75rem', color: 'var(--text-muted)' },
+                confirmationBanner: { display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '1rem', padding: '1rem', background: '#dcfce7', borderRadius: 'var(--radius)', border: '2px solid #16a34a' },
+                confirmationBannerIcon: { width: '40px', height: '40px', borderRadius: '50%', background: '#16a34a', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+                confirmationBannerTitle: { fontWeight: 700, fontSize: '1rem', color: '#16a34a' },
+                confirmationBannerText: { fontSize: '0.85rem', color: '#166534' },
+                phoneInput: { width: '100%', padding: '0.875rem 1rem', borderRadius: 'var(--radius-sm)', border: '2px solid var(--border)', fontSize: '1rem', marginTop: '1rem', outline: 'none' },
+                sendNowBtn: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', width: '100%', marginTop: '0.75rem', padding: '1rem', background: '#16a34a', color: 'white', border: 'none', borderRadius: 'var(--radius)', fontSize: '1rem', fontWeight: 700, cursor: 'pointer' },
+                datesScroll: { display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingBottom: '0.5rem', marginLeft: '-1.5rem', marginRight: '-1.5rem', paddingLeft: '1.5rem', paddingRight: '1.5rem' },
+                dateCard: { minWidth: '70px', padding: '0.75rem', background: 'var(--card)', borderRadius: 'var(--radius-sm)', border: '2px solid var(--border)', textAlign: 'center', cursor: 'pointer' },
+                dateCardSelected: { borderColor: 'var(--primary)', background: 'var(--primary)', color: 'white' },
+                dateDay: { fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.25rem' },
+                dateNum: { fontSize: '1.25rem', fontWeight: 800 },
+                dateMonth: { fontSize: '0.7rem', opacity: 0.7 },
+                timesGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' },
+                timeSlot: { padding: '0.75rem', background: 'var(--card)', borderRadius: 'var(--radius-sm)', border: '2px solid var(--border)', textAlign: 'center', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 },
+                timeSlotSelected: { borderColor: 'var(--primary)', background: 'var(--primary)', color: 'white' },
+                continueBtn: { width: '100%', padding: '1rem', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: 'var(--radius)', fontSize: '1rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginTop: '1rem' },
+                disabledBtn: { opacity: 0.5, cursor: 'not-allowed' },
+                confirmation: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '1.5rem' },
+                confirmCard: { background: 'white', borderRadius: 'var(--radius)', padding: '2rem', textAlign: 'center', maxWidth: '320px', width: '100%', animation: 'slideUp 0.4s ease-out' },
+                confirmIcon: { width: '80px', height: '80px', borderRadius: '50%', background: 'var(--success)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' },
+                confirmTitle: { fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem' },
+                confirmText: { color: 'var(--text-muted)', marginBottom: '1.5rem' },
+                confirmDetails: { background: 'var(--bg)', borderRadius: 'var(--radius-sm)', padding: '1rem', marginBottom: '1.5rem', textAlign: 'left' },
+                confirmRow: { display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem' },
+                confirmLabel: { color: 'var(--text-muted)' },
+                confirmValue: { fontWeight: 600 }
+            };
+
+            if (showConfirmation) {
+                return (
+                    <div style={styles.confirmation} onClick={() => { setShowConfirmation(false); setActiveTab('home'); setBookingData({ service: null, serviceDescription: '', date: null, time: null, name: '', phone: '', email: '', address: '', notes: '', photos: [] }); }}>
+                        <div style={styles.confirmCard} onClick={e => e.stopPropagation()}>
+                            <div style={styles.confirmIcon}><Icons.Check /></div>
+                            <h2 style={styles.confirmTitle}>Booking Requested!</h2>
+                            <p style={styles.confirmText}>We'll confirm your appointment within 2 hours</p>
+                            <div style={styles.confirmDetails}>
+                                <div style={{...styles.confirmRow, flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem'}}><span style={styles.confirmLabel}>Service Request</span><span style={{...styles.confirmValue, fontSize: '0.85rem'}}>{serviceDescription.length > 60 ? serviceDescription.substring(0, 60) + '...' : serviceDescription}</span></div>
+                                <div style={{...styles.confirmRow, marginTop: '0.75rem'}}><span style={styles.confirmLabel}>Date</span><span style={styles.confirmValue}>{formatDate(selectedDate).month} {formatDate(selectedDate).date}</span></div>
+                                <div style={{...styles.confirmRow, marginBottom: 0}}><span style={styles.confirmLabel}>Time</span><span style={styles.confirmValue}>{selectedTime}</span></div>
+                            </div>
+                            <button style={styles.continueBtn} onClick={() => { setShowConfirmation(false); setActiveTab('home'); }}>Done</button>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div style={styles.screen}>
+                    <div style={styles.header}>
+                        <h1 style={styles.title}>Schedule Service</h1>
+                        <p style={styles.subtitle}>Pick a time that works for you</p>
+                    </div>
+                    <div style={styles.steps}>{[1, 2, 3, 4].map(s => <div key={s} style={{...styles.stepDot, ...(step >= s ? styles.stepDotActive : {})}} />)}</div>
+                    <div style={styles.section}>
+                        <h3 style={styles.sectionTitle}><span style={styles.stepNum}>1</span>Describe Your Project</h3>
+                        <textarea 
+                            style={styles.serviceInput} 
+                            placeholder="Tell us what you need help with... For example: 'I have a leaky faucet in my kitchen' or 'Need to install ceiling fans in two bedrooms'"
+                            value={serviceDescription}
+                            onChange={e => setServiceDescription(e.target.value)}
+                        />
+                    </div>
+                    <div style={styles.section}>
+                        <h3 style={styles.sectionTitle}><span style={styles.stepNum}>2</span>How Would You Like to Proceed?</h3>
+                        <div style={styles.optionsGrid}>
+                                <div style={{...styles.optionCard, ...(contactNowSelected ? styles.optionCardSelected : {})}} onClick={() => { setContactNowSelected(true); setContactNowSent(false); }}>
+                                    <div style={{...styles.optionIcon, background: '#dcfce7', color: '#16a34a'}}><Icons.MessageCircle /></div>
+                                    <div style={styles.optionTitle}>Contact Now</div>
+                                    <div style={styles.optionDesc}>We'll get your message & call you right away</div>
+                                </div>
+                                <div style={{...styles.optionCard, ...(step >= 3 ? styles.optionCardSelected : {})}} onClick={() => { setContactNowSelected(false); setContactNowSent(false); setStep(3); }}>
+                                    <div style={{...styles.optionIcon, background: 'var(--primary-light)', color: 'var(--primary)'}}><Icons.Calendar /></div>
+                                    <div style={styles.optionTitle}>Schedule a Time</div>
+                                    <div style={styles.optionDesc}>Pick a date & time</div>
+                                </div>
+                            </div>
+                            {contactNowSelected && !contactNowSent && (
+                                <div>
+                                    <input 
+                                        type="tel" 
+                                        style={styles.phoneInput} 
+                                        placeholder="Your phone number" 
+                                        value={customerPhone}
+                                        onChange={e => setCustomerPhone(e.target.value)}
+                                    />
+                                    <button 
+                                        style={{...styles.sendNowBtn, opacity: contactNowLoading ? 0.7 : 1}} 
+                                        onClick={handleContactNow}
+                                        disabled={contactNowLoading}
+                                    >
+                                        {contactNowLoading ? 'Sending...' : <><Icons.Send /> Send Now</>}
+                                    </button>
+                                </div>
+                            )}
+                            {contactNowSent && (
+                                <div style={styles.confirmationBanner}>
+                                    <div style={styles.confirmationBannerIcon}><Icons.Check /></div>
+                                    <div>
+                                        <div style={styles.confirmationBannerTitle}>Message Sent!</div>
+                                        <div style={styles.confirmationBannerText}>We'll call you back shortly</div>
+                                    </div>
+                                </div>
+                            )}
+                    </div>
+                    {step >= 3 && (
+                        <div style={styles.section} className="slide-up">
+                            <h3 style={styles.sectionTitle}><span style={styles.stepNum}>3</span>Pick a Date</h3>
+                            <div style={styles.datesScroll} className="hide-scrollbar">
+                                {getDates().map(date => {
+                                    const f = formatDate(date);
+                                    const isSelected = selectedDate?.toDateString() === date.toDateString();
+                                    return <div key={f.full} style={{...styles.dateCard, ...(isSelected ? styles.dateCardSelected : {})}} onClick={() => { setSelectedDate(date); setStep(4); }}><div style={styles.dateDay}>{f.day}</div><div style={styles.dateNum}>{f.date}</div><div style={styles.dateMonth}>{f.month}</div></div>;
+                                })}
+                            </div>
+                        </div>
+                    )}
+                    {step >= 4 && selectedDate && (
+                        <div style={styles.section} className="slide-up">
+                            <h3 style={styles.sectionTitle}><span style={styles.stepNum}>4</span>Choose Time</h3>
+                            <div style={styles.timesGrid}>
+                                {timeSlots.map(time => <div key={time} style={{...styles.timeSlot, ...(selectedTime === time ? styles.timeSlotSelected : {})}} onClick={() => setSelectedTime(time)}>{time}</div>)}
+                            </div>
+                        </div>
+                    )}
+                    {step >= 3 && (
+                        <button style={{...styles.continueBtn, ...(!selectedDate || !selectedTime || bookingLoading ? styles.disabledBtn : {})}} onClick={handleConfirm} disabled={!selectedDate || !selectedTime || bookingLoading}>
+                            {bookingLoading ? 'Submitting...' : <>Confirm Booking <Icons.ChevronRight /></>}
+                        </button>
+                    )}
+                </div>
+            );
+        }
+
+        // Contact Screen
+        function ContactScreen() {
+            const [formData, setFormData] = useState({ name: '', phone: '', email: '', message: '' });
+            const [submitted, setSubmitted] = useState(false);
+            const [loading, setLoading] = useState(false);
+
+            const handleSubmit = async () => {
+                if (!formData.name || !formData.message) return;
+                setLoading(true);
+                try {
+                    await fetch(`${API_URL}/contact`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+                    setSubmitted(true);
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Failed to send. Please call us directly.');
+                }
+                setLoading(false);
+            };
+
+            const styles = {
+                screen: { padding: '1.5rem', animation: 'fadeIn 0.3s ease-out' },
+                header: { marginBottom: '1.5rem' },
+                title: { fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.25rem' },
+                subtitle: { color: 'var(--text-muted)', fontSize: '0.9rem' },
+                contactCards: { display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem' },
+                contactCard: { display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--card)', padding: '1rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', cursor: 'pointer', textDecoration: 'none', color: 'inherit' },
+                contactIcon: { width: '48px', height: '48px', borderRadius: '50%', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+                contactLabel: { fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.125rem' },
+                contactValue: { fontWeight: 700, fontSize: '0.95rem' },
+                formCard: { background: 'var(--card)', borderRadius: 'var(--radius)', padding: '1.5rem', border: '1px solid var(--border)' },
+                formTitle: { fontWeight: 700, marginBottom: '1rem' },
+                formGroup: { marginBottom: '1rem' },
+                label: { display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text)' },
+                input: { width: '100%', padding: '0.875rem 1rem', borderRadius: 'var(--radius-sm)', border: '2px solid var(--border)', fontSize: '1rem', outline: 'none' },
+                textarea: { width: '100%', padding: '0.875rem 1rem', borderRadius: 'var(--radius-sm)', border: '2px solid var(--border)', fontSize: '1rem', minHeight: '120px', resize: 'vertical', outline: 'none', fontFamily: 'inherit' },
+                submitBtn: { width: '100%', padding: '1rem', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: 'var(--radius)', fontSize: '1rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' },
+                success: { textAlign: 'center', padding: '2rem 1rem' },
+                successIcon: { width: '64px', height: '64px', borderRadius: '50%', background: 'var(--success)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' },
+                successTitle: { fontWeight: 700, fontSize: '1.1rem', marginBottom: '0.5rem' },
+                successText: { color: 'var(--text-muted)', fontSize: '0.9rem' }
+            };
+
+            if (submitted) {
+                return (
+                    <div style={styles.screen}>
+                        <div style={styles.formCard}>
+                            <div style={styles.success}>
+                                <div style={styles.successIcon}><Icons.Check /></div>
+                                <h3 style={styles.successTitle}>Message Sent!</h3>
+                                <p style={styles.successText}>We'll get back to you within a few hours</p>
+                            </div>
+                            <button style={styles.submitBtn} onClick={() => setSubmitted(false)}>Send Another Message</button>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div style={styles.screen}>
+                    <div style={styles.header}>
+                        <h1 style={styles.title}>Contact Us</h1>
+                        <p style={styles.subtitle}>We're here to help</p>
+                    </div>
+                    <div style={styles.contactCards}>
+                        <a href="tel:8505557692" style={styles.contactCard}><div style={styles.contactIcon}><Icons.Phone /></div><div><div style={styles.contactLabel}>Call us</div><div style={styles.contactValue}>(850) 555-SOWAL</div></div><Icons.ChevronRight /></a>
+                        <a href="mailto:hello@sowalrenovations.com" style={styles.contactCard}><div style={styles.contactIcon}><Icons.Mail /></div><div><div style={styles.contactLabel}>Email us</div><div style={styles.contactValue}>hello@sowalrenovations.com</div></div><Icons.ChevronRight /></a>
+                        <div style={styles.contactCard}><div style={styles.contactIcon}><Icons.Clock /></div><div><div style={styles.contactLabel}>Business hours</div><div style={styles.contactValue}>Mon-Sat: 7am - 6pm</div></div></div>
+                    </div>
+                    <div style={styles.formCard}>
+                        <h3 style={styles.formTitle}>Send a Message</h3>
+                        <div style={styles.formGroup}><label style={styles.label}>Your Name</label><input type="text" style={styles.input} placeholder="John Smith" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} /></div>
+                        <div style={styles.formGroup}><label style={styles.label}>Phone</label><input type="tel" style={styles.input} placeholder="(850) 555-1234" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} /></div>
+                        <div style={styles.formGroup}><label style={styles.label}>Email</label><input type="email" style={styles.input} placeholder="john@example.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} /></div>
+                        <div style={styles.formGroup}><label style={styles.label}>How can we help?</label><textarea style={styles.textarea} placeholder="Tell us about your project..." value={formData.message} onChange={e => setFormData({...formData, message: e.target.value})} /></div>
+                        <button style={{...styles.submitBtn, opacity: loading ? 0.7 : 1}} onClick={handleSubmit} disabled={loading}>
+                            {loading ? 'Sending...' : <>Send Message <Icons.Send /></>}
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        // Account Screen
+        function AccountScreen() {
+            const styles = {
+                screen: { padding: '1.5rem', animation: 'fadeIn 0.3s ease-out' },
+                header: { marginBottom: '2rem', textAlign: 'center' },
+                avatar: { width: '80px', height: '80px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', color: 'white' },
+                title: { fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.25rem' },
+                subtitle: { color: 'var(--text-muted)', fontSize: '0.9rem' },
+                card: { background: 'var(--card)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', overflow: 'hidden', marginBottom: '1rem' },
+                cardTitle: { padding: '1rem', fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border)' },
+                menuItem: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', borderBottom: '1px solid var(--border)', cursor: 'pointer' },
+                menuItemLast: { borderBottom: 'none' },
+                menuLabel: { fontWeight: 600, fontSize: '0.95rem' },
+                badge: { background: 'var(--primary-light)', color: 'var(--primary)', padding: '0.25rem 0.75rem', borderRadius: 'var(--radius-full)', fontSize: '0.8rem', fontWeight: 600 },
+                info: { background: 'var(--primary-light)', borderRadius: 'var(--radius)', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' },
+                infoIcon: { width: '48px', height: '48px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+                infoTitle: { fontWeight: 700, marginBottom: '0.25rem' },
+                infoText: { fontSize: '0.85rem', color: 'var(--text-muted)' }
+            };
+
+            return (
+                <div style={styles.screen}>
+                    <div style={styles.header}>
+                        <div style={styles.avatar}><Icons.User /></div>
+                        <h1 style={styles.title}>Welcome!</h1>
+                        <p style={styles.subtitle}>Manage your account</p>
+                    </div>
+                    <div style={styles.card}>
+                        <div style={styles.cardTitle}>Your Bookings</div>
+                        <div style={styles.menuItem}><span style={styles.menuLabel}>Upcoming Appointments</span><span style={styles.badge}>0</span></div>
+                        <div style={{...styles.menuItem, ...styles.menuItemLast}}><span style={styles.menuLabel}>Past Services</span><Icons.ChevronRight /></div>
+                    </div>
+                    <div style={styles.card}>
+                        <div style={styles.cardTitle}>Settings</div>
+                        <div style={styles.menuItem}><span style={styles.menuLabel}>Notifications</span><Icons.ChevronRight /></div>
+                        <div style={styles.menuItem}><span style={styles.menuLabel}>Saved Addresses</span><Icons.ChevronRight /></div>
+                        <div style={{...styles.menuItem, ...styles.menuItemLast}}><span style={styles.menuLabel}>Payment Methods</span><Icons.ChevronRight /></div>
+                    </div>
+                    <div style={styles.info}>
+                        <div style={styles.infoIcon}><Icons.Shield /></div>
+                        <div><div style={styles.infoTitle}>Licensed & Insured</div><div style={styles.infoText}>All work backed by our satisfaction guarantee</div></div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
